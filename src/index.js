@@ -20,9 +20,10 @@ const config = {
 const PIPES_TO_RENDER = 4;
 
 let bird = null;
+let pipes = null;
 
 const pipeVerticalDistanceRange = [150, 250];
-let pipeHorizontalDistance = 0;
+const pipeHorizontalDistanceRange = [500, 550];
 
 const initialBirdPosition = {
   x: config.width / 10,
@@ -42,12 +43,16 @@ function create() {
   bird = this.physics.add.sprite(initialBirdPosition.x, initialBirdPosition.y, 'bird').setOrigin(0, 0);
   bird.body.gravity.y = 400;
 
+  pipes = this.physics.add.group();
+
   for (let i = 0; i < PIPES_TO_RENDER; i++) {
-    const upperPipe = this.physics.add.sprite(0, 0, 'pipe').setOrigin(0, 1);
-    const lowerPipe = this.physics.add.sprite(0, 0, 'pipe').setOrigin(0, 0);
+    const upperPipe = pipes.create(0, 0, 'pipe').setOrigin(0, 1);
+    const lowerPipe = pipes.create(0, 0, 'pipe').setOrigin(0, 0);
 
     placePipe(upperPipe, lowerPipe);
   }
+
+  pipes.setVelocityX(-200);
 
   this.input.on('pointerdown', flap);
 
@@ -58,22 +63,45 @@ function update(time, delta) {
   if (bird.y < -bird.height || bird.y > config.height) {
     restartPlayerPosition();
   }
+
+  recyclePipes();
 }
 
 function placePipe(uPipe, lPipe) {
-  pipeHorizontalDistance += 400;
+  const rightMostX = getRightMostPipe();
 
-  let pipeVerticalDistance = Phaser.Math.Between(...pipeVerticalDistanceRange);
-  let pipeVerticalPosition = Phaser.Math.Between(20, config.height - 20 - pipeVerticalDistance);
+  const pipeVerticalDistance = Phaser.Math.Between(...pipeVerticalDistanceRange);
+  const pipeVerticalPosition = Phaser.Math.Between(20, config.height - 20 - pipeVerticalDistance);
+  const pipeHorizontalDistance = Phaser.Math.Between(...pipeHorizontalDistanceRange);
 
-  uPipe.x = pipeHorizontalDistance;
+  uPipe.x = rightMostX + pipeHorizontalDistance;
   uPipe.y = pipeVerticalPosition;
 
-  lPipe.x = pipeHorizontalDistance;
+  lPipe.x = uPipe.x;
   lPipe.y = uPipe.y + pipeVerticalDistance;
+}
 
-  uPipe.body.velocity.x = -200;
-  lPipe.body.velocity.x = -200;
+function recyclePipes() {
+  const tmpPipes = [];
+
+  pipes.getChildren().forEach(pipe => {
+    if (pipe.getBounds().right <= 0) {
+      tmpPipes.push(pipe);
+      if (tmpPipes.length === 2) {
+        placePipe(...tmpPipes);
+      }
+    }
+  });
+}
+
+function getRightMostPipe() {
+  let rightMostX = 0;
+
+  pipes.getChildren().forEach(pipe => {
+    rightMostX = Math.max(pipe.x, rightMostX);
+  });
+
+  return rightMostX;
 }
 
 function restartPlayerPosition() {
