@@ -27,15 +27,19 @@ class PlayScene extends Phaser.Scene {
     this.createBG();
     this.createBird();
     this.createPipes();
+    this.createColiders();
     this.handleInputs();
   }
 
   update() {
-    if (this.bird.y < -this.bird.height || this.bird.y > this.config.height) {
-      this.restartPlayerPosition();
-    }
-
+    this.checkGameStatus();
     this.recyclePipes();
+  }
+
+  checkGameStatus() {
+    if (this.bird.y <= 0 || this.bird.getBounds().bottom >= this.config.height) {
+      this.gameOver();
+    }
   }
 
   createBG() {
@@ -45,14 +49,20 @@ class PlayScene extends Phaser.Scene {
   createBird() {
     this.bird = this.physics.add.sprite(this.config.startPosition.x, this.config.startPosition.y, 'bird').setOrigin(0, 0);
     this.bird.body.gravity.y = 400;
+
+    this.bird.setCollideWorldBounds(true);
   }
 
   createPipes() {
     this.pipes = this.physics.add.group();
 
     for (let i = 0; i < this.PIPES_TO_RENDER; i++) {
-      const upperPipe = this.pipes.create(0, 0, 'pipe').setOrigin(0, 1);
-      const lowerPipe = this.pipes.create(0, 0, 'pipe').setOrigin(0, 0);
+      const upperPipe = this.pipes.create(0, 0, 'pipe')
+        .setImmovable(true)
+        .setOrigin(0, 1);
+      const lowerPipe = this.pipes.create(0, 0, 'pipe')
+        .setImmovable(true)
+        .setOrigin(0, 0);
 
       this.placePipe(upperPipe, lowerPipe);
     }
@@ -60,8 +70,12 @@ class PlayScene extends Phaser.Scene {
     this.pipes.setVelocityX(-200);
   }
 
+  createColiders() {
+    this.physics.add.collider(this.bird, this.pipes, this.gameOver, null, this);
+  }
+
   handleInputs() {
-    this.input.on('pointerdown', () => this.flap, this);
+    this.input.on('pointerdown', this.flap, this);
 
     this.input.keyboard.on('keydown-SPACE', this.flap, this);
   }
@@ -103,10 +117,17 @@ class PlayScene extends Phaser.Scene {
     return rightMostX;
   }
 
-  restartPlayerPosition() {
-    this.bird.x = this.config.startPosition.x;
-    this.bird.y = this.config.startPosition.y;
-    this.bird.body.velocity.y = 0;
+  gameOver() {
+    this.physics.pause();
+    this.bird.setTint(0xFF0000);
+
+    this.time.addEvent({
+      delay: 1000,
+      callback: () => {
+        this.scene.restart();
+      },
+      loop: false,
+    });
   }
 
   flap() {
