@@ -16,7 +16,7 @@ class BaseScene extends Phaser.Scene {
     if (this.config.canGoBack) {
       const backButton = this.add.image(this.config.width - 10, this.config.height - 10, 'back')
         .setOrigin(1)
-        .setScale(3)
+        .setScale(2)
         .setInteractive()
 
       backButton.on('pointerup', () => {

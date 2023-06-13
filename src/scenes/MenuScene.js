@@ -23,10 +23,10 @@ class MenuScene extends BaseScene {
   create() {
     super.create();
 
-    this.createMenu(this.menu, this.setupMenuitems.bind(this));
+    this.createMenu(this.menu, this.setupMenuItems.bind(this));
   }
 
-  setupMenuitems(menuItem) {
+  setupMenuItems(menuItem) {
     const textGO = menuItem.textGO;
     textGO.setInteractive();
 
